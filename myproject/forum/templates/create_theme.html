@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Create Theme{% endblock %}
+
+{% block content %}
+    {% load crispy_forms_tags %}
+    {% if user.is_authenticated %}
+        <div class="card justify-content-center text-center" style="width: 40%;margin-left:30%; top: 15%;position: absolute">
+        <div class="card-body">
+        <img style='width: 64px' src="{% static 'images/Karafuto.svg' %}">
+        <h4 class="card-title">Create your Theme</h4>
+        <form action="" method="post" />
+        {{ theme_form|crispy }}
+        {% csrf_token %}<br>
+        <button type="submit" class="btn btn-primary btn-block mt-2">Подтвердить</button>
+        </form>
+    </div>
+</div>
+    {% else %}
+    <p style='margin-top: 15%' class=" justify-content-center text-center">Чтобы создать тему, зайдите на сайт. <br>Нажмите <a href="{% url "forum:login" %}">здесь</a> для аутентификации.</p>
+    {% endif %}
+{% endblock %}

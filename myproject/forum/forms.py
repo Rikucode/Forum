@@ -1,19 +1,20 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from .models import CustomUser, Answer
+from .models import CustomUser, Answer, Topic, Theme
 
 
 class CustomUserCreationForm(UserCreationForm):
 
     class Meta(UserCreationForm):
+
         model = CustomUser
         fields = ('username', 'email')
 
 
 class CustomUserRegistrationForm(forms.ModelForm):
 
-    password = forms.CharField(label='Password', widget=forms.PasswordInput)
-    password2 = forms.CharField(label='Repeat password', widget=forms.PasswordInput)
+    password = forms.CharField(label='Пароль', widget=forms.PasswordInput)
+    password2 = forms.CharField(label='Повторите пароль', widget=forms.PasswordInput)
 
     class Meta(UserCreationForm):
         model = CustomUser
@@ -34,15 +35,30 @@ class CustomUserChangeForm(UserChangeForm):
 
 
 class LoginForm(forms.Form):
+
     username = forms.CharField()
     password = forms.CharField(widget=forms.PasswordInput)
 
 
 class AnswerForm(forms.ModelForm):
-    class Meta(UserCreationForm):
-        model = Answer
-        fields = ('answerText', 'answerDate', 'answerUser')
 
+    class Meta:
+        model = Answer
+        fields = ('answerText',)
+
+
+class TopicForm(forms.ModelForm):
+
+    class Meta:
+        model = Topic
+        fields = ('topicTitle', 'topicText')
+
+
+class ThemeForm(forms.ModelForm):
+
+    class Meta:
+        model = Theme
+        fields = ('themeTitle', 'themeText')
 
 
 

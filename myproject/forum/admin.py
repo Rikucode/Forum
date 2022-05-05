@@ -1,6 +1,5 @@
 from django.contrib import admin
-from .models import Question, Answer
-from django.contrib.auth import get_user_model
+from .models import Topic, Answer, Theme
 from django.contrib.auth.admin import UserAdmin
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 from .models import CustomUser
@@ -11,13 +10,35 @@ class AnswerInline(admin.TabularInline):
     model = Answer
 
 
-class QuestionAdmin(admin.ModelAdmin):
-    fields = ['qTitle', 'qUser', 'qDate', 'qText']
+class TopicsInline(admin.TabularInline):
+    model = Topic
+
+
+class ThemeAdmin(admin.ModelAdmin):
+    fields = ['themeTitle', 'themeText', 'themeDate', 'themeUser', 'is_active']
+    inlines = [TopicsInline]
+    list_display = ('themeTitle', 'themeText', 'themeDate', 'themeUser', 'is_active','id')
+    actions = ['approve_themes']
+
+    def approve_themes(self, request, queryset):
+        queryset.update(is_active=True)
+
+
+admin.site.register(Theme, ThemeAdmin)
+
+
+class TopicAdmin(admin.ModelAdmin):
+    fields = ['topicTitle', 'topicUser', 'topicDate', 'topicText']
     inlines = [AnswerInline]
-    list_display = ('qTitle', 'qText', 'qDate', 'qUser', 'wasPublishedRecently', 'id')
+    list_display = ('topicTitle', 'topicText', 'topicDate', 'topicUser', 'id')
 
 
-admin.site.register(Question, QuestionAdmin)
+admin.site.register(Topic, TopicAdmin)
+
+
+class AnswerAdmin(admin.ModelAdmin):
+    fields = ['answerTopic', 'answerUser', 'answerText', 'answerDate']
+    list_display = ('answerTopic', 'answerUser', 'answerText', 'answerDate')
 
 
 class CustomUserAdmin(UserAdmin):
@@ -28,5 +49,5 @@ class CustomUserAdmin(UserAdmin):
 
 
 admin.site.register(CustomUser, CustomUserAdmin)
-
+admin.site.register(Answer, AnswerAdmin)
 admin.AdminSite.site_header = "Ура админка"

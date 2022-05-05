@@ -5,10 +5,11 @@ from . import views
 app_name = 'forum'
 urlpatterns = [
     path('', views.home, name="home"),
-    path('questions/<int:pk>/', views.TopicDetailView.as_view(), name="detail"),
-    path('questions/', views.IndexView.as_view(), name="index"),
+    path('forum/<int:pk_theme>/themes/<int:pk_topic>/page=<int:page>', views.topic_messages, name="detail"),
+    path('forum/<int:pk_theme>/themes/page=<int:page>', views.topics, name="topic"),
     path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/register/', views.register, name='register'),
-    path('questions/create/', views.create_q, name='create_q'),
-    # path('questions/<int:pk>/write', views.create_a, name='create_a'),
+    path('forum/<int:pk_theme>/themes/create/', views.create_topic, name='create_topic'),
+    path('forum/page=<int:page>', views.themes, name="theme"),
+    path('forum/create', views.create_theme, name='create_theme'),
 ]

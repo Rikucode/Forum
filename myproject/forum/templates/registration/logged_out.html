@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<p>Logged out!</p>
+    <div style='margin-top: 15%' class=" justify-content-center text-center">
+        <p>Logged out!</p>
 
-<a href="{% url 'forum:login'%}">Click here to login again.</a>
+        <a href="{% url 'forum:login'%}">Click here to login again.</a></div>
+
 {% endblock %}

@@ -1,49 +1,69 @@
+from django.core.paginator import Paginator, EmptyPage
 from django.utils import timezone
 from django.contrib.auth import authenticate
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseRedirect, HttpResponse
-from .models import Question, Answer
+from .models import Topic, Answer, Theme
 from django.urls import reverse
-from django.views import generic
-from .forms import LoginForm, CustomUserRegistrationForm
-import random
-from django.contrib.auth.mixins import LoginRequiredMixin
+from .forms import LoginForm, CustomUserRegistrationForm, AnswerForm, TopicForm, ThemeForm
 # Create your views here.
 
 
-class IndexView(generic.ListView):
-    template_name = 'index.html'
-    context_object_name = 'latest_question_list'
-    paginate_by = 5
+def themes(request, page=1):
+    theme_list = Theme.objects.order_by('-themeDate').filter(is_active=True)
+    paginator = Paginator(theme_list, 5)
+    try:
+        theme_list = paginator.page(page)
+    except EmptyPage:
+        theme_list = paginator.page(paginator.num_pages)
+    return render(request, 'themes.html', {'theme_list': theme_list})
 
-    def get_queryset(self):
-        return Question.objects.order_by('-qDate')
+
+def topics(request, pk_theme, page=1):
+    theme = get_object_or_404(Theme, pk=pk_theme)
+    theme_id = theme.pk
+    topics_list = Topic.objects.order_by('-topicDate').filter(topicTheme=pk_theme)
+    topics_count = topics_list.count()
+    paginator = Paginator(topics_list, 7)
+    try:
+        topics_list = paginator.page(page)
+    except EmptyPage:
+        topics_list = paginator.page(paginator.num_pages)
+    return render(request, 'topics.html', {'theme':theme, 'theme_id': theme_id, 'topics_list': topics_list, 'topics_count':topics_count})
 
 
-class TopicDetailView(generic.DetailView):
-    model = Question
-    modelA = Answer
-    template_name = 'detail.html'
-    context_object_name = 'latest_answer_list'
-    # paginate_by = 10
+def topic_messages(request, pk_theme, pk_topic, page=1):
+    theme = get_object_or_404(Theme, pk=pk_theme)
+    topic = get_object_or_404(Topic, pk=pk_topic)
+    theme_id = theme.pk
+    topic_id = topic.pk
+    messages_list = Answer.objects.order_by('-answerDate').filter(answerTopic=pk_topic)
+    messages_count = messages_list.count()
+    paginator = Paginator(messages_list, 10)
+    message = None
+    if request.method == 'POST':
+        answer_form = AnswerForm(data=request.POST)
+        message = answer_form.save(commit=False)
+        message.answerUser = request.user
+        message.answerDate = timezone.now()
+        message.answerTopic = topic
+        message.save()
+        return redirect('forum:detail', pk_theme=pk_theme, pk_topic=pk_topic, page=1)
+    else:
+        answer_form = AnswerForm()
 
-    def get_object(self):
-        question = get_object_or_404(Answer, pk=self.kwargs['pk'])
-        return self.modelA.objects.filter(pk=question.pk)
+    try:
+        messages_list = paginator.page(page)
+    except EmptyPage:
+        messages_list = paginator.page(paginator.num_pages)
 
-    def get_queryset(self):
-        return Answer.objects.filter('answerQuestion')
-
-    # def get_context_data(self, **kwargs):
-    #     context = super(TopicDetailView, self).get_context_data(**kwargs)
-    #     context['now'] = timezone.now()
-    #     return context
+    return render(request, 'detail.html', {'answer_form': answer_form, 'message': message, 'theme_id':theme_id, 'topic_id': topic_id, 'topicTitle': topic.topicTitle, 'topicDate':topic.topicDate, 'topicText':topic.topicText, 'topicUser':topic.topicUser, 'messages_list': messages_list, 'messages_count': messages_count}, )
 
 
 def home(request):
     visit_count = request.session.get('visit_count', 0)
     request.session['visit_count'] = visit_count + 1
-    return render(request, 'home.html', context={'visit_count':visit_count},)
+    return render(request, 'home.html', context={'visit_count': visit_count},)
 
 
 def login(request):
@@ -76,15 +96,42 @@ def register(request):
             new_user = user_form.save(commit=False)
             new_user.set_password(user_form.cleaned_data['password'])
             new_user.save()
-            return redirect(request, 'registration/register_done.html', {'new_user': new_user})
+            return HttpResponseRedirect(reverse('forum:login'))
     else:
         user_form = CustomUserRegistrationForm()
     return render(request, 'registration/register.html', {'user_form': user_form})
 
 
-def create_q(request):
-    return render(request,'')
+def create_topic(request, pk_theme):
+    theme = get_object_or_404(Theme, pk=pk_theme)
+    theme_id = theme.pk
+    if request.method == 'POST':
+        topic_form = TopicForm(data=request.POST)
+        topic = topic_form.save(commit=False)
+        # topicCheck = Topic.objects.filter(topicTheme=theme).filter(topicTitle=topic_form.topicTitle)
+        # if topicCheck:
+        #     return redirect('forum:home')
+        # else:
+        topic.topicTheme = theme
+        topic.topicUser = request.user
+        topic.topicDate = timezone.now()
+        topic.save()
+        return redirect('forum:topic', pk_theme, 1)
+    else:
+        topic_form = TopicForm()
+    return render(request, 'create_topic.html', {'topic_form': topic_form,'theme_id':theme_id})
 
 
-# def create_a(request):
-#     return render(request,'')
+def create_theme(request):
+    print(request.method)
+    if request.method == 'POST':
+        theme_form = ThemeForm(request.POST)
+        theme = theme_form.save(commit=False)
+        theme.themeUser = request.user
+        theme.themeDate = timezone.now()
+        theme.save()
+        return redirect('forum:theme', 1)
+    else:
+        theme_form = ThemeForm()
+    return render(request, 'create_theme.html', {'theme_form': theme_form})
+
